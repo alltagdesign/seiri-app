@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#F6A8B8">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>わたしの周期ノート</title>
+<style>
+  :root{
+    --pink:#F6A8B8; --pink-soft:#FBE1E7; --pink-line:#EFB9C6;
+    --egg:#F0B850; --egg-soft:#FBEBCB;
+    --warn:#C97A54;
+    --ink:#4A4A48; --ink-soft:#8A8A86; --line:#ECE8E6; --bg:#FBF8F6; --card:#FFFFFF;
+    --mood1:#6FA8DC; --mood2:#7FC8A9; --mood3:#A8A8A2; --mood4:#E9A94E; --mood5:#D97A55;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:40px;}
+  header{background:linear-gradient(135deg,#F6A8B8,#F3B9A0); color:#fff; padding:18px 20px 16px; text-align:center;}
+  header h1{margin:0; font-size:18px; font-weight:600; letter-spacing:.02em;}
+  .wrap{max-width:440px; margin:0 auto; padding:14px;}
+  .card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+
+  /* summary */
+  .summary{display:flex; align-items:center; justify-content:space-around; text-align:center;}
+  .summary .col{flex:1;}
+  .summary .lbl{font-size:11px; color:var(--ink-soft);}
+  .summary .big{font-size:22px; font-weight:700; margin:2px 0;}
+  .summary .sub{font-size:11px; color:var(--ink-soft);}
+  .summary .div{width:1px; align-self:stretch; background:var(--line);}
+
+  /* main button */
+  .btn-period{display:block; width:100%; border:none; background:var(--pink); color:#fff;
+    font-size:17px; font-weight:600; padding:15px; border-radius:26px; cursor:pointer;}
+  .btn-period:active{transform:scale(.98);}
+  .btn-note{font-size:12px; color:var(--ink-soft); text-align:center; margin-bottom:10px;}
+
+  /* mood */
+  .mood-title{font-size:14px; font-weight:600; text-align:center; margin-bottom:12px;}
+  .mood-row{display:grid; grid-template-columns:repeat(5,1fr); gap:6px;}
+  .mood{text-align:center; cursor:pointer; padding:9px 2px; border-radius:12px; border:1px solid var(--line); background:#fff;}
+  .mood .ico{font-size:24px; line-height:1;}
+  .mood .t{font-size:10px; color:var(--ink-soft); margin-top:4px;}
+  .mood.on{border-width:2px;}
+  .mood-msg{text-align:center; font-size:11px; color:var(--ink-soft); margin-top:10px; min-height:14px;}
+
+  /* calendar */
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .cal-head button{border:none; background:none; font-size:22px; color:var(--pink); cursor:pointer; padding:4px 12px;}
+  .cal-head .m{font-size:16px; font-weight:600;}
+  .dow{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:11px; color:var(--ink-soft); margin-bottom:4px;}
+  .dow .sun{color:#E68A8A;} .dow .sat{color:#7AA6D8;}
+  .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:2px;}
+  .cell{position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    font-size:13px; border-radius:10px; cursor:pointer;}
+  .cell.empty{cursor:default;}
+  .cell .n{position:relative; z-index:2;}
+  .cell.today{outline:2px solid var(--ink-soft); outline-offset:-2px;}
+  .cell.period{background:var(--pink-soft);}
+  .cell.p-start{background:var(--pink); color:#fff;}
+  .cell.p-pred{border:1.5px dashed var(--pink-line);}
+  .cell .stamp{position:absolute; top:1px; right:3px; font-size:12px; z-index:3; line-height:1;}
+  .cell .mood-dot{position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
+    width:6px; height:6px; border-radius:50%; z-index:3;}
+
+  .legend{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:12px;}
+  .legend .sw{display:inline-block; width:13px; height:13px; border-radius:4px; vertical-align:-2px; margin-right:5px;}
+
+  /* insight */
+  .insight h3{font-size:14px; margin:0 0 10px;}
+  .insight .row{display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .insight .row:last-child{border:none;}
+  .insight .phase{color:var(--ink-soft);}
+  .insight .val{font-weight:600;}
+  .insight .empty{font-size:12px; color:var(--ink-soft); text-align:center; padding:8px;}
+
+  .toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:rgba(74,74,72,.94); color:#fff; padding:11px 20px; border-radius:22px; font-size:13px;
+    opacity:0; transition:.25s; pointer-events:none; z-index:50;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .mini{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:2px;}
+  .undo{color:var(--pink); text-decoration:underline; cursor:pointer;}
+</style>
+</head>
+<body>
+<header><h1>わたしの周期ノート</h1></header>
+<div class="wrap">
+
+  <!-- summary -->
+  <div class="card summary" id="summary"></div>
+
+  <!-- period + mood -->
+  <div class="card">
+    <div class="btn-note">生理がきたら、その日をタップするか下のボタンで登録</div>
+    <button class="btn-period" id="btnPeriod">今日、生理がきた</button>
+
+    <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--line);">
+      <div class="mood-title">今日の気分・イライラ度</div>
+      <div class="mood-row" id="moodRow">
+        <div class="mood" data-v="1"><div class="ico">😢</div><div class="t">悲しい</div></div>
+        <div class="mood" data-v="2"><div class="ico">😔</div><div class="t">少し沈む</div></div>
+        <div class="mood" data-v="3"><div class="ico">😐</div><div class="t">普通</div></div>
+        <div class="mood" data-v="4"><div class="ico">😤</div><div class="t">モヤモヤ</div></div>
+        <div class="mood" data-v="5"><div class="ico">😠</div><div class="t">怒り</div></div>
+      </div>
+      <div class="mood-msg" id="moodMsg"></div>
+    </div>
+  </div>
+
+  <!-- calendar -->
+  <div class="card">
+    <div class="cal-head">
+      <button id="prev">‹</button>
+      <div class="m" id="calTitle"></div>
+      <button id="next">›</button>
+    </div>
+    <div class="dow"><span class="sun">日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="sat">土</span></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="legend">
+      <div><span class="sw" style="background:var(--pink-soft)"></span>生理期間</div>
+      <div>❤️ 生理日 / 次回予測</div>
+      <div>🥚 排卵予測</div>
+      <div>⚠️ 生理1週間前</div>
+      <div><span class="sw" style="border:1.5px dashed var(--pink-line); background:#fff"></span>次回生理予測</div>
+      <div><span class="sw" style="background:var(--mood5); border-radius:50%"></span>気分の記録あり</div>
+    </div>
+  </div>
+
+  <!-- insight -->
+  <div class="card insight">
+    <h3>気分のふりかえり</h3>
+    <div id="insight"></div>
+    <div class="mini">記録がたまると、生理前・排卵日あたりの傾向が見えてきます</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ データ ============ */
+const KEY='seiri_data_v1';
+const DEFAULT_CYCLE=27, DEFAULT_LEN=7, LUTEAL=13; // ケアミー基準：周期27日・排卵は次回予定の13日前
+const SEED_PERIODS=["2025-07-11","2025-08-06","2025-09-01","2025-09-27","2025-10-25","2025-11-19","2025-12-16","2026-01-11","2026-02-08","2026-03-09","2026-04-07","2026-05-04","2026-06-28"];
+
+function load(){
+  let d=null;
+  try{ d=JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+  if(!d){ d={periods:[...SEED_PERIODS], moods:{}}; save(d); }
+  if(!d.moods) d.moods={};
+  if(!d.periods) d.periods=[];
+  return d;
+}
+function save(d){ localStorage.setItem(KEY, JSON.stringify(d)); }
+let DATA=load();
+
+/* ============ 日付ユーティリティ ============ */
+const iso=d=>{const z=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());};
+const parse=s=>{const [y,m,dd]=s.split('-').map(Number); return new Date(y,m-1,dd);};
+const addDays=(d,n)=>{const x=new Date(d); x.setDate(x.getDate()+n); return x;};
+const diffDays=(a,b)=>Math.round((parse(a)-parse(b))/86400000);
+const todayISO=iso(new Date());
+
+/* ============ 予測ロジック（自己修正型） ============ */
+function sortedPeriods(){ return [...DATA.periods].sort(); }
+function avgCycle(){
+  const p=sortedPeriods();
+  if(p.length<2) return DEFAULT_CYCLE;
+  // 全周期の間隔を計算
+  const gaps=[];
+  for(let i=1;i<p.length;i++) gaps.push(diffDays(p[i],p[i-1]));
+  // 極端な値（妊娠・記録漏れ等）を弾く：15〜45日のみ採用
+  let use=gaps.filter(g=>g>=15&&g<=45);
+  if(!use.length) use=gaps;
+  // 直近12周期までを対象に「中央値」を採用（外れ値に強く、ケアミー式に近い）
+  use=use.slice(-12).sort((a,b)=>a-b);
+  const mid=Math.floor(use.length/2);
+  const median = use.length%2 ? use[mid] : Math.round((use[mid-1]+use[mid])/2);
+  return median;
+}
+function avgLength(){ return DEFAULT_LEN; }
+function predict(){
+  const p=sortedPeriods();
+  const cyc=avgCycle();
+  const last=p[p.length-1];
+  let nextStart=iso(addDays(parse(last),cyc));
+  // 次回予測が過去なら、今日を越えるまで周期を足す
+  while(diffDays(nextStart,todayISO)<0){ nextStart=iso(addDays(parse(nextStart),cyc)); }
+  const ovulation=iso(addDays(parse(nextStart),-LUTEAL));
+  const warn1w=iso(addDays(parse(nextStart),-7));
+  return {cyc, last, nextStart, ovulation, warn1w};
+}
+
+/* ============ 生理日の登録／取り消し ============ */
+function isPeriodStart(s){ return DATA.periods.includes(s); }
+function inPeriodRange(s){
+  return sortedPeriods().some(st=>{ const d=diffDays(s,st); return d>=0 && d<avgLength(); });
+}
+function togglePeriod(s){
+  if(isPeriodStart(s)){
+    DATA.periods=DATA.periods.filter(x=>x!==s);
+    save(DATA); render(); toast('生理日を取り消しました');
+  }else{
+    DATA.periods.push(s); save(DATA); render();
+    const pr=predict();
+    toast('登録しました（次回予測 '+fmt(pr.nextStart)+'・周期'+pr.cyc+'日）');
+  }
+}
+const fmt=s=>{const d=parse(s); return (d.getMonth()+1)+'/'+d.getDate();};
+
+/* ============ 気分記録 ============ */
+function setMood(v){
+  DATA.moods[todayISO]=v; save(DATA);
+  const L={1:'悲しい',2:'少し沈む',3:'普通',4:'モヤモヤ',5:'怒り'};
+  document.getElementById('moodMsg').textContent='「'+L[v]+'」で記録しました';
+  renderMoodRow(); renderGrid(); renderInsight();
+}
+function renderMoodRow(){
+  const cur=DATA.moods[todayISO];
+  const C={1:'--mood1',2:'--mood2',3:'--mood3',4:'--mood4',5:'--mood5'};
+  document.querySelectorAll('.mood').forEach(el=>{
+    const v=+el.dataset.v;
+    if(v===cur){ el.classList.add('on'); el.style.borderColor='var('+C[v]+')'; el.style.background='#fff'; }
+    else{ el.classList.remove('on'); el.style.borderColor='var(--line)'; }
+  });
+}
+
+/* ============ 気分ふりかえり（生理◯日前・排卵日で集計） ============ */
+function phaseOf(s){
+  // その日が「次に来る生理予定日まで何日前か」で分類
+  const p=sortedPeriods();
+  const pr=predict();
+  // 実績の生理開始日を基準に、直近の開始日からの経過でフェーズ判定
+  // 簡易版：予測の次回生理日・排卵日との距離で分類
+  const toNext=diffDays(pr.nextStart,s);
+  const toOvu=Math.abs(diffDays(pr.ovulation,s));
+  if(inPeriodRange(s)) return '生理中';
+  if(toOvu<=1) return '排卵日ごろ';
+  if(toNext>=1 && toNext<=3) return '生理3日前';
+  if(toNext>=4 && toNext<=7) return '生理1週間前';
+  return null;
+}
+function renderInsight(){
+  const box=document.getElementById('insight');
+  const buckets={};
+  Object.keys(DATA.moods).forEach(s=>{
+    const ph=phaseOf(s); if(!ph) return;
+    (buckets[ph]=buckets[ph]||[]).push(DATA.moods[s]);
+  });
+  const order=['生理1週間前','生理3日前','排卵日ごろ','生理中'];
+  const rows=order.filter(k=>buckets[k]&&buckets[k].length);
+  if(!rows.length){ box.innerHTML='<div class="empty">まだ記録が少ないです。気分を数日つけると傾向が出ます。</div>'; return; }
+  const emo={1:'😢',2:'😔',3:'😐',4:'😤',5:'😠'};
+  box.innerHTML=rows.map(k=>{
+    const arr=buckets[k]; const avg=Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+    return '<div class="row"><span class="phase">'+k+'（'+arr.length+'日）</span><span class="val">'+emo[avg]+' 平均'+avg+'</span></div>';
+  }).join('');
+}
+
+/* ============ カレンダー描画 ============ */
+let viewY, viewM;
+function initView(){ const t=new Date(); viewY=t.getFullYear(); viewM=t.getMonth(); }
+function renderGrid(){
+  const grid=document.getElementById('grid');
+  document.getElementById('calTitle').textContent=viewY+'年'+(viewM+1)+'月';
+  const first=new Date(viewY,viewM,1); const startDow=first.getDay();
+  const dim=new Date(viewY,viewM+1,0).getDate();
+  const pr=predict();
+  const moodColor={1:'--mood1',2:'--mood2',3:'--mood3',4:'--mood4',5:'--mood5'};
+  let html='';
+  for(let i=0;i<startDow;i++) html+='<div class="cell empty"></div>';
+  for(let d=1; d<=dim; d++){
+    const s=iso(new Date(viewY,viewM,d));
+    let cls='cell', stamp='';
+    if(inPeriodRange(s)) cls+=' period';
+    if(isPeriodStart(s)){ cls+=' p-start'; stamp='❤️'; }
+    if(s===pr.ovulation) stamp='🥚';
+    if(s===pr.warn1w) stamp='⚠️';
+    if(s===pr.nextStart){ cls+=' p-pred'; stamp='❤️'; }
+    if(s===todayISO) cls+=' today';
+    let dot='';
+    if(DATA.moods[s]) dot='<span class="mood-dot" style="background:var('+moodColor[DATA.moods[s]]+')"></span>';
+    html+='<div class="'+cls+'" data-d="'+s+'"><span class="n">'+d+'</span>'+
+          (stamp?'<span class="stamp">'+stamp+'</span>':'')+dot+'</div>';
+  }
+  grid.innerHTML=html;
+  grid.querySelectorAll('.cell:not(.empty)').forEach(c=>{
+    c.onclick=()=>togglePeriod(c.dataset.d);
+  });
+}
+
+/* ============ サマリー ============ */
+function renderSummary(){
+  const pr=predict();
+  const daysTo=diffDays(pr.nextStart,todayISO);
+  document.getElementById('summary').innerHTML=
+    '<div class="col"><div class="lbl">次の生理予定</div><div class="big">'+fmt(pr.nextStart)+'</div><div class="sub">あと'+daysTo+'日</div></div>'+
+    '<div class="div"></div>'+
+    '<div class="col"><div class="lbl">排卵予定</div><div class="big">'+fmt(pr.ovulation)+'</div><div class="sub">周期 '+pr.cyc+'日</div></div>';
+}
+
+/* ============ toast ============ */
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ============ 全体描画 ============ */
+function render(){ renderSummary(); renderGrid(); renderMoodRow(); renderInsight(); }
+
+/* ============ イベント ============ */
+document.getElementById('btnPeriod').onclick=()=>togglePeriod(todayISO);
+document.getElementById('prev').onclick=()=>{ viewM--; if(viewM<0){viewM=11;viewY--;} renderGrid(); };
+document.getElementById('next').onclick=()=>{ viewM++; if(viewM>11){viewM=0;viewY++;} renderGrid(); };
+document.querySelectorAll('.mood').forEach(el=>el.onclick=()=>setMood(+el.dataset.v));
+
+initView(); render();
+
+/* PWA: service worker */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
