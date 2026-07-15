@@ -144,6 +144,19 @@
 <script>
 /* ============ データ ============ */
 const KEY='seiri_data_v1';
+
+/* ===== ★GAS連携設定：ここ2つを自分の値に ===== */
+const GAS_URL    = "https://script.google.com/macros/s/AKfycbwvKg6pzmUnIscO5Q3f-Nc8Tkjkxdud3QS-2H2sxXpEbtm4TwG9T49EYPIDaRnIF16m/exec";
+const GAS_SECRET = "saori-seiri-2026";  // GAS側のSECRETと同じ文字列
+/* ============================================ */
+
+/* GASへ送信（ネットが無くてもアプリは動く。送信は裏でこっそり） */
+function syncToGas(action, dateStr){
+  if(!GAS_URL || GAS_URL.indexOf("ここに")===0) return;
+  const url = GAS_URL + "?secret=" + encodeURIComponent(GAS_SECRET)
+            + "&action=" + action + (dateStr ? "&date="+dateStr : "");
+  fetch(url, {mode:'no-cors'}).catch(()=>{});
+}
 const DEFAULT_CYCLE=27, DEFAULT_LEN=7, LUTEAL=13; // ケアミー基準：周期27日・排卵は次回予定の13日前
 const SEED_PERIODS=["2025-07-11","2025-08-06","2025-09-01","2025-09-27","2025-10-25","2025-11-19","2025-12-16","2026-01-11","2026-02-08","2026-03-09","2026-04-07","2026-05-04","2026-06-28"];
 
@@ -204,10 +217,12 @@ function togglePeriod(s){
   if(isPeriodStart(s)){
     DATA.periods=DATA.periods.filter(x=>x!==s);
     save(DATA); render(); toast('生理日を取り消しました');
+    syncToGas('remove', s);
   }else{
     DATA.periods.push(s); save(DATA); render();
     const pr=predict();
     toast('登録しました（次回予測 '+fmt(pr.nextStart)+'・周期'+pr.cyc+'日）');
+    syncToGas('add', s);
   }
 }
 const fmt=s=>{const d=parse(s); return (d.getMonth()+1)+'/'+d.getDate();};
